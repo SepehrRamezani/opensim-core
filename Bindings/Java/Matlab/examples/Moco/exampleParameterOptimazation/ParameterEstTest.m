@@ -125,22 +125,34 @@ model.addController(muscleController);
 
 %% Finalize connections so that sockets connectees are correctly saved
 model.finalizeConnections();
+
 model.setUseVisualizer(visualize)
+
 state = model.initSystem();
+
 % osimSimulate(model, state, Etime);
 
 initState = State(state);
+% state.setTime(0.0);
+% model.getCoordinateSet().get(0).setValue(state, 0.1*i);
 manager = Manager(model);
+% state.setTime(i*dTime);
 manager.initialize(initState);
-state = manager.integrate(finalTime);
-simulatedAtLeastOnce = true;
+TimeCounter=0;
+for i = 0:0.1:Etime       
+    TimeCounter=TimeCounter+1;
+    state = manager.integrate(i);
+    Muscle1=model.getMuscles().get(0);
+    Muscle2=model.getMuscles().get(1);
+    muscle1length(TimeCounter)=CurrentMuscle1.getLength(state);
+    muscle2length(TimeCounter)=CurrentMuscle2.getLength(state);
+end
+MAxSLM1=min(muscle1length);
+MAxSLM2=min(muscle2length);
 
 sTable = manager.getStatesTable();
 stofiles = STOFileAdapter();
-if ~isdir('ResultsFWD')
-    mkdir ResultsFWD
-end
-stofiles.write(sTable, 'ResultsFWD/simulation_states.sto');
+stofiles.write(sTable, 'simulation_states.sto');
 
 %% Use the provided plotting function to plot some results.
 if plotResults
