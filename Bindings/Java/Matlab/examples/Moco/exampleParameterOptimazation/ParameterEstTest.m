@@ -144,11 +144,12 @@ for i = 0:0.1:Etime
     state = manager.integrate(i);
     Muscle1=model.getMuscles().get(0);
     Muscle2=model.getMuscles().get(1);
-    muscle1length(TimeCounter)=CurrentMuscle1.getLength(state);
-    muscle2length(TimeCounter)=CurrentMuscle2.getLength(state);
+    muscle1length(TimeCounter)=Muscle1.getLength(state);
+    muscle2length(TimeCounter)=Muscle2.getLength(state);
 end
 MAxSLM1=min(muscle1length);
 MAxSLM2=min(muscle2length);
+
 
 sTable = manager.getStatesTable();
 stofiles = STOFileAdapter();
