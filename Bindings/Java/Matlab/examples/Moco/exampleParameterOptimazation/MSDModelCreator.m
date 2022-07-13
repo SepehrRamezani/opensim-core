@@ -1,6 +1,8 @@
 
 clear all
 import org.opensim.modeling.*
+myLog = JavaLogSink();
+Logger.addSink(myLog)
 visualize=1;
 plotResults=1;
 Stime=0;
@@ -14,7 +16,7 @@ zeroVec3=Vec3(0);
 anchorpos=[0.2,0.5,0];
 
 blockheight=0.2;
-blockmass=30;
+blockmass=50;
 %% Define Bodies and Joints in the Model
 % Get a reference to the model's ground body
 ground = model.getGround();
@@ -126,7 +128,7 @@ Pelvis_rz.setDefaultValue(0);
 Pelvis_tx = blockToGround.upd_coordinates(1); % T about x
 Pelvis_tx.setRange([-1, 1]);
 Pelvis_tx.setName('Block_tx');
-Pelvis_tx.setDefaultValue(0);
+Pelvis_tx.setDefaultValue(-0.15);
 Pelvis_tx.setDefaultSpeedValue(0)
 
 Pelvis_ty = blockToGround.upd_coordinates(2); % Translation about y
@@ -134,6 +136,7 @@ Pelvis_ty.setRange([-1,1]);
 Pelvis_ty.setName('Block_ty');
 Pelvis_ty.setDefaultValue(blockheight);
 Pelvis_ty.setDefaultSpeedValue(0)
+Pelvis_ty.set_locked(true);
 % Set bounds on the 6 coordinates of the Free Joint.
 % angleRange 	  = [-pi, pi];
 % positionRange = [-1, 1];
@@ -172,11 +175,11 @@ muscle1.setPennationAngleAtOptimalFiberLength(pennationAngle);
 % muscle1.set_tendon_compliance_dynamics_mode('implicit');
 muscle1.set_passive_fiber_strain_at_one_norm_force(passivefiberstrain);
 muscle1.set_tendon_strain_at_one_norm_force(tendonstrain);
-muscle1.set_max_contraction_velocity(10)
+muscle1.set_max_contraction_velocity(100)
 
 % Add Path points to muscle 1
 muscle1.addNewPathPoint('muscle1-point1', ground, Vec3(-anchorpos(1),anchorpos(2),-anchorpos(3)))
-muscle1.addNewPathPoint('muscle1-point2', block, Vec3(-0.05,0.05,0))
+muscle1.addNewPathPoint('muscle1-point2', block, Vec3(0,0.05,0))
 
 % Instantiate a second Muscle
 muscle2 = DeGrooteFregly2016Muscle();
@@ -188,7 +191,7 @@ muscle2.setPennationAngleAtOptimalFiberLength(pennationAngle)
 % muscle2.set_tendon_compliance_dynamics_mode('implicit');
 muscle2.set_passive_fiber_strain_at_one_norm_force(passivefiberstrain);
 muscle2.set_tendon_strain_at_one_norm_force(tendonstrain);
-muscle2.set_max_contraction_velocity(10)
+muscle2.set_max_contraction_velocity(100)
 
 % Add Path points to  muscle 2
 muscle2.addNewPathPoint('muscle2-point1', ground, Vec3(anchorpos(1),anchorpos(2),anchorpos(3)))
@@ -196,7 +199,7 @@ muscle2.addNewPathPoint('muscle2-point2', block, Vec3(0.05,0.05,0))
 
 % Add the two muscles (as forces) to the model
 model.addForce(muscle1)
-model.addForce(muscle2);
+% model.addForce(muscle2);
 
 %% Define a Controller to the Model
 muscleController = PrescribedController();
@@ -206,7 +209,7 @@ muscleController.setActuators(model.updActuators())
 % Define Piecewise functions for the control values for the two muscles
 p = inputParser();
 defaultControl1 = [0.0 1 2 3 4 5.0 7;
-    0.0 1 1 0.5 0.5 0.2 0.2];
+    0.8 .2 1 0.5 0.5 0.4 0.4];
 defaultControl2 = [0.0 1 2 3 4 5 7;
     0.8 .1 .5 0 1 0.2 0.2];
 controlFunction1 = PiecewiseLinearFunction();
@@ -217,7 +220,7 @@ for i = 1:size(defaultControl1,2)
 end
 % Set the indiviudal muscle control functions for the prescribed muscle controller
 muscleController.prescribeControlForActuator('muscle1', controlFunction1);
-muscleController.prescribeControlForActuator('muscle2', controlFunction2);
+% muscleController.prescribeControlForActuator('muscle2', controlFunction2);
 
 % Add the controller to the model
 model.addController(muscleController);
@@ -242,12 +245,12 @@ for i = 0:0.1:Etime
     TimeCounter=TimeCounter+1;
     state = manager.integrate(i);
     Muscle1=model.getMuscles().get(0);
-    Muscle2=model.getMuscles().get(1);
+%     Muscle2=model.getMuscles().get(1);
     muscle1length(TimeCounter)=Muscle1.getLength(state);
-    muscle2length(TimeCounter)=Muscle2.getLength(state);
+%     muscle2length(TimeCounter)=Muscle2.getLength(state);
 end	
 MaxSLM1=min(muscle1length);
-MaxSLM2=min(muscle2length);
+% MaxSLM2=min(muscle2length);
 sTable=manager.getStatesTable();
 forward=ForwardTool(); 
 forward.setModel(model);
@@ -270,12 +273,12 @@ model.print('MSD_2.osim');
 Refmmodel = Model('MSD_2.osim');
 statetable=TableProcessor('MSD_FD_states.sto');
 controlltable=TableProcessor('MSD_FD_controls.sto');
-kneeTrackingParamSolution=MSDParameterOptimazation(statetable,controlltable,Refmmodel,[Stime Etime],MaxSLM1);
+kneeTrackingParamSolution=MSDParameterOptimazation(statetable,controlltable,model,[Stime Etime],MaxSLM1);
 
 % Sptable=TableProcessor(sTable);
 % kneeTrackingParamSolution=MSDParameterOptimazation(Sptable,Sptable,model,[Stime Etime],MaxSLM1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
+Logger.removeSink(myLog) 
 

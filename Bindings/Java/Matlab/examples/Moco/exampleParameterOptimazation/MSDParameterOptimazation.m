@@ -39,7 +39,7 @@ study = track.initialize();
 problem = study.updProblem();
 
 % param = MocoParameter('tendon_slack_muscle1','/forceset/muscle1','tendon_slack_length', MocoBounds(0.2*MaxSLM1,MaxSLM1));
-param1 = MocoParameter('max_iso_muscle1','/forceset/muscle1','max_isometric_force', MocoBounds(3800,4500));
+param1 = MocoParameter('max_iso_muscle1','/forceset/muscle1','max_isometric_force', MocoBounds(300,5000));
 param2 = MocoParameter('optimal_fiber_muscle1','/forceset/muscle1','optimal_fiber_length', MocoBounds(.1,0.4));
 param3 = MocoParameter('pennation_angle_muscle1','/forceset/muscle1','pennation_angle_at_optimal', MocoBounds(0,1.5));
 param4 = MocoParameter('passive_fiber_muscle1','/forceset/muscle1','passive_fiber_strain_at_one_norm_force', MocoBounds(0.1,0.9));
@@ -70,12 +70,12 @@ ContTracking = MocoControlTrackingGoal('MuscleControlTracking');
 % controlsRef = TableProcessor('Kneeflexion_solution.sto');
 ContTracking.setReference(ControlTrackTable);
 ContTracking.setReferenceLabel('/forceset/muscle1','muscle1');
-ContTracking.setReferenceLabel('/forceset/muscle2','muscle2');
+% ContTracking.setReferenceLabel('/forceset/muscle2','muscle2');
 ContTracking.setWeightForControl('/forceset/muscle1',ControlWight);
-ContTracking.setWeightForControl('/forceset/muscle2',ControlWight);
+% ContTracking.setWeightForControl('/forceset/muscle2',ControlWight);
 problem.addGoal(ContTracking)
-% ContTracking.setWeightForControl('/forceset/muscle1/activation',ControlWight);
-% ContTracking.setWeightForControl('/forceset/muscle2/activation',ControlWight);
+ContTracking.setWeightForControl('/forceset/muscle1',ControlWight);
+%  ContTracking.setWeightForControl('/forceset/muscle2',ControlWight);
 model = modelProcessor.process();
 model.initSystem();
 %% add cost function
@@ -97,8 +97,8 @@ solver = study.initCasADiSolver();
 solver.set_num_mesh_intervals(Solverinterval);
 solver.set_verbosity(2);
 solver.set_optim_solver('ipopt');
-solver.set_optim_convergence_tolerance(1e-3);
-solver.set_optim_constraint_tolerance(1e-1);
+solver.set_optim_convergence_tolerance(1e-2);
+solver.set_optim_constraint_tolerance(1e0);
 solver.set_optim_max_iterations(4000);
 solver.set_implicit_auxiliary_derivatives_weight(0.00001)
 solver.set_parameters_require_initsystem(false);
